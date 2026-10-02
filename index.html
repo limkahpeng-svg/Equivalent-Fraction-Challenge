@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Fraction Lab: Equivalent Fractions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Outfit:wght@400;600;800&family=STIX+Two+Math&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        outfit: ['Outfit', 'sans-serif'],
+                        math: ['STIX Two Math', 'serif'],
+                    },
+                    colors: {
+                        magic: {
+                            purple: '#6d28d9',
+                            pink: '#ec4899',
+                            cyan: '#06b6d4',
+                            yellow: '#f59e0b',
+                            dark: '#1e1b4b',
+                        }
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 2s infinite',
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 15px rgba(236, 72, 153, 0.5)' },
+                            '50%': { boxShadow: '0 0 30px rgba(236, 72, 153, 0.9)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: radial-gradient(circle at top center, #2e1065 0%, #0f172a 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+            user-select: none;
+        }
+
+        /* Glassmorphism containers */
+        .glass-panel {
+            background: rgba(30, 27, 75, 0.85);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        /* Textbook Fraction Display Styles */
+        .fraction-container {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            vertical-align: middle;
+            font-family: 'Outfit', 'STIX Two Math', serif;
+            min-width: 60px;
+        }
+
+        .fraction-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #ffffff;
+            margin: 6px 0;
+            border-radius: 2px;
+        }
+
+        .math-box {
+            width: 64px;
+            height: 64px;
+            border: 3px solid #f59e0b;
+            background-color: #ffffff;
+            color: #0f172a;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .math-box.active {
+            border-color: #ec4899;
+            box-shadow: 0 0 18px rgba(236, 72, 153, 0.9);
+            transform: scale(1.08);
+        }
+
+        .math-box.filled {
+            background-color: #fef08a;
+            color: #1e1b4b;
+        }
+
+        .potion-card {
+            transition: all 0.2s ease;
+        }
+        .potion-card:hover {
+            transform: translateY(-5px) scale(1.02);
+        }
+
+        .btn-magic {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            box-shadow: 0 6px 0 #92400e, 0 10px 15px rgba(0,0,0,0.3);
+            transition: all 0.1s ease;
+        }
+        .btn-magic:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #92400e, 0 5px 10px rgba(0,0,0,0.3);
+        }
+
+        .fraction-bar-segment {
+            transition: all 0.3s ease;
+            border-right: 2px solid rgba(15, 23, 42, 0.6);
+        }
+        .fraction-bar-segment:last-child {
+            border-right: none;
+        }
+
+        .op-text {
+            font-family: 'Outfit', 'STIX Two Math', serif;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #6d28d9;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen justify-between p-2 md:p-6 overflow-x-hidden">
+
+    <!-- TOP HEADER / NAV -->
+    <header class="max-w-5xl mx-auto w-full flex items-center justify-between glass-panel p-3 md:p-4 rounded-2xl mb-4">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center text-2xl shadow-lg border border-white/20">
+                🧪
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-pink-300 to-cyan-300">
+                    Magic Fraction Lab
+                </h1>
+                <p class="text-xs text-purple-200 hidden sm:block">Primary 3 Equivalent Fractions Textbook Practice</p>
+            </div>
+        </div>
+
+        <!-- STATS / SCORE BOARD -->
+        <div class="flex items-center gap-3 md:gap-6">
+            <div class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/10">
+                <span class="text-yellow-400 text-lg">⭐</span>
+                <span id="score-display" class="font-bold text-lg md:text-xl text-yellow-300">0</span>
+            </div>
+            <div class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/10">
+                <span class="text-orange-400 text-lg">🔥</span>
+                <span id="streak-display" class="font-bold text-lg md:text-xl text-orange-300">0</span>
+            </div>
+            <button id="sound-btn" onclick="toggleSound()" class="p-2.5 bg-purple-900/60 hover:bg-purple-800 rounded-xl border border-white/20 transition-all text-yellow-300 text-lg">
+                <i class="fas fa-volume-up"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-5xl mx-auto w-full flex-grow flex flex-col justify-center">
+
+        <!-- SCREEN 1: LEVEL SELECTOR -->
+        <div id="level-select-screen" class="glass-panel p-6 md:p-10 rounded-3xl text-center max-w-3xl mx-auto w-full">
+            <div class="inline-block p-4 bg-purple-900/50 rounded-full mb-4 border border-purple-400/30 animate-float">
+                <span class="text-5xl">🧙‍♂️</span>
+            </div>
+            <h2 class="text-2xl md:text-4xl font-extrabold text-white mb-2">Welcome, Apprentice Alchemist!</h2>
+            <p class="text-purple-200 mb-8 max-w-lg mx-auto text-sm md:text-base">
+                Master equivalent fractions with Singapore Primary 3 examination questions!
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-left">
+                <!-- Level 1 Card -->
+                <button onclick="startLevel(1)" class="potion-card glass-panel p-5 rounded-2xl border-2 border-emerald-400/50 hover:border-emerald-400 flex flex-col justify-between group">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-3xl">🧪</span>
+                            <span class="bg-emerald-500/20 text-emerald-300 text-xs font-bold px-2.5 py-1 rounded-full border border-emerald-500/40">Level 1</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white group-hover:text-emerald-300 transition-colors">Increasing Denominators</h3>
+                        <p class="text-xs text-purple-200 mt-2 leading-relaxed">
+                            Two equivalent fractions with <b>increasing denominators</b>. Fill in the missing square box! <b>(Denominators up to 12)</b>
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-emerald-300 font-bold">
+                        <span>Start Level 1</span>
+                        <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </button>
+
+                <!-- Level 2 Card -->
+                <button onclick="startLevel(2)" class="potion-card glass-panel p-5 rounded-2xl border-2 border-cyan-400/50 hover:border-cyan-400 flex flex-col justify-between group">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-3xl">🔮</span>
+                            <span class="bg-cyan-500/20 text-cyan-300 text-xs font-bold px-2.5 py-1 rounded-full border border-cyan-500/40">Level 2</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">Mixed Scaling</h3>
+                        <p class="text-xs text-purple-200 mt-2 leading-relaxed">
+                            Two fractions with <b>both increasing and decreasing denominators</b>. <b>(Denominators up to 24)</b>
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-cyan-300 font-bold">
+                        <span>Start Level 2</span>
+                        <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </button>
+
+                <!-- Level 3 Card -->
+                <button onclick="startLevel(3)" class="potion-card glass-panel p-5 rounded-2xl border-2 border-pink-400/50 hover:border-pink-400 flex flex-col justify-between group">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-3xl">👑</span>
+                            <span class="bg-pink-500/20 text-pink-300 text-xs font-bold px-2.5 py-1 rounded-full border border-pink-500/40">Level 3</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white group-hover:text-pink-300 transition-colors">Triple Fraction Chain</h3>
+                        <p class="text-xs text-purple-200 mt-2 leading-relaxed">
+                            Three equivalent fractions in a row with <b>two missing square boxes</b>! <b>(Denominators up to 48)</b>
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-pink-300 font-bold">
+                        <span>Start Level 3</span>
+                        <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </button>
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center justify-center gap-6 text-xs text-purple-300">
+                <span class="flex items-center gap-2"><i class="fas fa-square text-yellow-400"></i> Standard Exam Format: Fill in the square boxes</span>
+                <span class="flex items-center gap-2"><i class="fas fa-layer-group text-yellow-400"></i> Scaffolding: Denominators 12 → 24 → 48</span>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: GAMEPLAY PLAYGROUND -->
+        <div id="gameplay-screen" class="hidden flex-col gap-4">
+
+            <!-- TOP SUB-BAR -->
+            <div class="flex items-center justify-between glass-panel px-4 py-3 rounded-2xl">
+                <button onclick="showLevelSelect()" class="text-xs md:text-sm bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl font-semibold flex items-center gap-2 transition-all">
+                    <i class="fas fa-arrow-left"></i> Change Level
+                </button>
+                <div id="level-badge-container" class="text-sm font-bold text-yellow-300 flex items-center gap-2">
+                    <!-- Dynamic title -->
+                </div>
+                <div class="text-xs text-purple-200">
+                    Question <span id="current-q-num" class="text-white font-bold">1</span> / 5
+                </div>
+            </div>
+
+            <!-- MASCOT INSTRUCTION BUBBLE -->
+            <div class="glass-panel p-4 rounded-2xl flex items-start md:items-center gap-4 border-l-4 border-yellow-400 relative overflow-hidden">
+                <div class="text-3xl md:text-4xl shrink-0 animate-bounce-slow">🦉</div>
+                <div class="flex-grow">
+                    <span id="mascot-title" class="text-xs font-bold uppercase tracking-wider text-yellow-400">Professor Pip says:</span>
+                    <p id="mascot-instruction" class="text-sm md:text-base font-medium text-white leading-snug">
+                        Fill in the missing box to complete the equivalent fraction!
+                    </p>
+                </div>
+            </div>
+
+            <!-- MAIN PUZZLE BOARD -->
+            <div id="puzzle-board" class="glass-panel p-4 md:p-8 rounded-3xl min-h-[380px] flex flex-col justify-between">
+                
+                <!-- LEVEL 1 & 2 VIEW: Two Fractions Equation -->
+                <div id="two-fraction-view" class="hidden flex-col gap-6 items-center">
+                    
+                    <!-- Textbook Fraction Equation Box -->
+                    <div class="bg-black/40 p-6 md:p-8 rounded-3xl border border-white/20 shadow-2xl flex items-center justify-center gap-4 md:gap-6 my-2 min-h-[140px] w-full max-w-2xl overflow-x-auto">
+                        <!-- Left Fraction -->
+                        <div class="fraction-container text-2xl md:text-4xl font-bold px-2">
+                            <div id="l12-frac1-top">1</div>
+                            <div class="fraction-bar"></div>
+                            <div id="l12-frac1-bot">2</div>
+                        </div>
+
+                        <!-- Equal Sign -->
+                        <div class="text-3xl md:text-5xl font-black text-pink-400 px-1 md:px-2">=</div>
+
+                        <!-- Right Fraction -->
+                        <div class="fraction-container text-2xl md:text-4xl font-bold px-2">
+                            <div id="l12-frac2-top">?</div>
+                            <div class="fraction-bar"></div>
+                            <div id="l12-frac2-bot">?</div>
+                        </div>
+                    </div>
+
+                    <!-- Visual Fraction Bar Scaffolding (Toggleable for L1 & L2) -->
+                    <div id="visual-bar-hint-container" class="w-full max-w-xl bg-black/30 p-4 rounded-2xl border border-white/10 flex flex-col gap-3">
+                        <div class="flex items-center justify-between text-xs text-purple-200">
+                            <span>Visual Fraction Bar Comparison</span>
+                            <button onclick="toggleVisualHint()" id="toggle-hint-btn" class="text-yellow-300 underline text-xs">Hide Visual Bar</button>
+                        </div>
+                        <div id="visual-bars-box" class="flex flex-col gap-2">
+                            <div id="bar1-container" class="w-full h-8 bg-purple-950 rounded-lg flex overflow-hidden border border-white/20"></div>
+                            <div id="bar2-container" class="w-full h-8 bg-purple-950 rounded-lg flex overflow-hidden border border-cyan-400/40"></div>
+                        </div>
+                    </div>
+
+                    <!-- Number Choices Pad -->
+                    <div class="flex flex-col items-center gap-3 w-full">
+                        <span class="text-sm text-purple-200 font-semibold">Select the number for the square box:</span>
+                        <div id="options-grid" class="flex flex-wrap justify-center gap-3">
+                            <!-- Choice buttons injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LEVEL 3 VIEW: Three Fractions Chain Equation -->
+                <div id="three-fraction-view" class="hidden flex-col gap-6 items-center">
+                    
+                    <!-- Textbook 3-Fraction Chain -->
+                    <div class="bg-black/40 p-6 md:p-8 rounded-3xl border border-white/20 shadow-2xl flex items-center justify-center gap-4 md:gap-6 my-2 overflow-x-auto w-full max-w-2xl">
+                        <!-- Fraction 1 -->
+                        <div class="fraction-container text-2xl md:text-4xl font-bold">
+                            <div id="l3-frac1-top">12</div>
+                            <div class="fraction-bar"></div>
+                            <div id="l3-frac1-bot">16</div>
+                        </div>
+
+                        <div class="text-3xl md:text-4xl font-black text-pink-400 px-1">=</div>
+
+                        <!-- Fraction 2 -->
+                        <div class="fraction-container text-2xl md:text-4xl font-bold">
+                            <div id="l3-frac2-top">6</div>
+                            <div class="fraction-bar"></div>
+                            <div id="l3-frac2-bot">?</div>
+                        </div>
+
+                        <div class="text-3xl md:text-4xl font-black text-pink-400 px-1">=</div>
+
+                        <!-- Fraction 3 -->
+                        <div class="fraction-container text-2xl md:text-4xl font-bold">
+                            <div id="l3-frac3-top">?</div>
+                            <div class="fraction-bar"></div>
+                            <div id="l3-frac3-bot">4</div>
+                        </div>
+                    </div>
+
+                    <!-- Box Target Selection Indicator -->
+                    <div class="flex items-center justify-center gap-4 bg-purple-950/60 p-3 rounded-xl border border-white/10 text-xs md:text-sm">
+                        <span class="text-purple-200">Currently filling:</span>
+                        <button id="select-box1-btn" onclick="setActiveBox(1)" class="px-3 py-1.5 rounded-lg border font-bold transition-all bg-yellow-500 text-slate-950 border-yellow-300">
+                            Box 1: <span id="box1-value-label">?</span>
+                        </button>
+                        <button id="select-box2-btn" onclick="setActiveBox(2)" class="px-3 py-1.5 rounded-lg border font-bold transition-all bg-purple-800 text-purple-200 border-white/20">
+                            Box 2: <span id="box2-value-label">?</span>
+                        </button>
+                    </div>
+
+                    <!-- Choices for active box -->
+                    <div class="flex flex-col items-center gap-3 w-full">
+                        <span id="l3-choice-prompt" class="text-sm text-yellow-300 font-semibold">Select a number for Box 1:</span>
+                        <div id="l3-options-grid" class="flex flex-wrap justify-center gap-3">
+                            <!-- Choice buttons injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ACTION / SUBMIT FOOTER -->
+                <div id="gameplay-action-footer" class="mt-6 pt-4 border-t border-white/10 flex justify-between items-center">
+                    <div id="feedback-msg" class="text-sm font-bold min-h-[24px] flex items-center gap-2">
+                        <!-- Dynamic feedback -->
+                    </div>
+                    <button id="primary-action-btn" onclick="submitCurrentAnswer()" class="btn-magic px-6 py-2.5 rounded-xl text-base font-bold text-white flex items-center gap-2">
+                        <span>Check Answer</span> <i class="fas fa-check"></i>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- SCREEN 3: LEVEL COMPLETE MODAL -->
+        <div id="victory-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div class="glass-panel p-8 rounded-3xl max-w-md w-full text-center border-2 border-yellow-400/50 shadow-2xl relative overflow-hidden">
+                <div class="text-6xl mb-3 animate-bounce">🏆</div>
+                <h2 class="text-3xl font-black text-yellow-300 mb-1">Level Complete!</h2>
+                <p class="text-sm text-purple-200 mb-6">Fantastic fraction crafting, Apprentice!</p>
+
+                <div class="bg-black/40 p-4 rounded-2xl border border-white/10 mb-6 flex justify-around">
+                    <div class="text-center">
+                        <span class="text-xs text-purple-300 block">Stars Earned</span>
+                        <span id="modal-stars" class="text-2xl font-bold text-yellow-300">⭐⭐⭐</span>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-xs text-purple-300 block">Total Score</span>
+                        <span id="modal-score" class="text-2xl font-bold text-cyan-300">150</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <button onclick="nextLevelOrReplay()" class="btn-magic w-full py-3 rounded-xl font-bold text-white text-lg">
+                        Continue Quest 🚀
+                    </button>
+                    <button onclick="showLevelSelect()" class="w-full py-2.5 bg-white/10 hover:bg-white/20 rounded-xl font-semibold text-purple-200 text-sm">
+                        Back to Level Select
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="max-w-5xl mx-auto w-full text-center py-3 text-xs text-purple-400 border-t border-white/5 mt-4">
+        Primary 3 Mathematics • Equivalent Fractions Exam Practice
+    </footer>
+
+    <script>
+        /* SOUND FX GENERATOR (Web Audio API) */
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'correct') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.1);
+                osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.2);
+                osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.35);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(150, now + 0.25);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } else if (type === 'win') {
+                [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((freq, idx) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.frequency.setValueAtTime(freq, now + idx * 0.09);
+                    g.gain.setValueAtTime(0.15, now + idx * 0.09);
+                    g.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.09 + 0.25);
+                    o.start(now + idx * 0.09);
+                    o.stop(now + idx * 0.09 + 0.25);
+                });
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('sound-btn');
+            btn.innerHTML = soundEnabled ? '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-volume-mute text-red-400"></i>';
+        }
+
+        // GAME STATE
+        let currentLevel = 1;
+        let currentQuestionIdx = 0;
+        let totalQuestions = 5;
+        let score = 0;
+        let streak = 0;
+        let currentProblem = null;
+        let userBoxChoice1 = null;
+        let userBoxChoice2 = null;
+        let activeL3Box = 1; // 1 or 2
+        let showVisualHint = true;
+        let attemptsForQuestion = 0;
+        let isHintActive = false;
+
+        // BASE SIMPLE FRACTIONS FOR PRIMARY 3
+        const BASE_FRACTIONS = [
+            { n: 1, d: 2 }, { n: 1, d: 3 }, { n: 2, d: 3 }, { n: 1, d: 4 }, { n: 3, d: 4 },
+            { n: 1, d: 5 }, { n: 2, d: 5 }, { n: 3, d: 5 }, { n: 4, d: 5 }, { n: 1, d: 6 },
+            { n: 5, d: 6 }, { n: 1, d: 8 }, { n: 3, d: 8 }, { n: 5, d: 8 }, { n: 7, d: 8 },
+            { n: 1, d: 10 }, { n: 3, d: 10 }, { n: 7, d: 10 }, { n: 9, d: 10 }, { n: 1, d: 12 },
+            { n: 5, d: 12 }, { n: 7, d: 12 }
+        ];
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generateProblemForLevel(lvl) {
+            if (lvl === 1) {
+                // LEVEL 1: ONLY INCREASING DENOMINATORS (Denominators <= 12)
+                let valid = BASE_FRACTIONS.filter(f => f.d * 2 <= 12);
+                let base = valid[getRandomInt(0, valid.length - 1)];
+                let maxMult = Math.floor(12 / base.d);
+                let mult = getRandomInt(2, maxMult);
+
+                let frac1 = { n: base.n, d: base.d };
+                let frac2 = { n: base.n * mult, d: base.d * mult };
+
+                let boxPosition = Math.random() < 0.5 ? 'frac2_num' : 'frac2_den';
+                let correctVal = boxPosition === 'frac2_num' ? frac2.n : frac2.d;
+
+                return {
+                    lvl: 1,
+                    type: 'increasing',
+                    frac1: frac1,
+                    frac2: frac2,
+                    boxPosition: boxPosition,
+                    correctVal: correctVal,
+                    maxDenom: 12
+                };
+
+            } else if (lvl === 2) {
+                // LEVEL 2: BOTH INCREASING AND DECREASING DENOMINATORS (Denominators <= 24)
+                let isIncreasing = Math.random() < 0.5;
+
+                if (isIncreasing) {
+                    let valid = BASE_FRACTIONS.filter(f => f.d * 2 <= 24);
+                    let base = valid[getRandomInt(0, valid.length - 1)];
+                    let maxMult = Math.floor(24 / base.d);
+                    let mult = getRandomInt(2, maxMult);
+
+                    let frac1 = { n: base.n, d: base.d };
+                    let frac2 = { n: base.n * mult, d: base.d * mult };
+
+                    let posOptions = ['frac1_num', 'frac1_den', 'frac2_num', 'frac2_den'];
+                    let boxPosition = posOptions[getRandomInt(0, 3)];
+                    let correctVal;
+                    if (boxPosition === 'frac1_num') correctVal = frac1.n;
+                    else if (boxPosition === 'frac1_den') correctVal = frac1.d;
+                    else if (boxPosition === 'frac2_num') correctVal = frac2.n;
+                    else correctVal = frac2.d;
+
+                    return {
+                        lvl: 2,
+                        type: 'increasing',
+                        frac1: frac1,
+                        frac2: frac2,
+                        boxPosition: boxPosition,
+                        correctVal: correctVal,
+                        maxDenom: 24
+                    };
+                } else {
+                    // DECREASING DENOMINATOR (Simplification direction)
+                    let valid = BASE_FRACTIONS.filter(f => f.d * 2 <= 24);
+                    let base = valid[getRandomInt(0, valid.length - 1)];
+                    let maxMult = Math.floor(24 / base.d);
+                    let mult = getRandomInt(2, maxMult);
+
+                    let frac1 = { n: base.n * mult, d: base.d * mult };
+                    let frac2 = { n: base.n, d: base.d };
+
+                    let posOptions = ['frac1_num', 'frac1_den', 'frac2_num', 'frac2_den'];
+                    let boxPosition = posOptions[getRandomInt(0, 3)];
+                    let correctVal;
+                    if (boxPosition === 'frac1_num') correctVal = frac1.n;
+                    else if (boxPosition === 'frac1_den') correctVal = frac1.d;
+                    else if (boxPosition === 'frac2_num') correctVal = frac2.n;
+                    else correctVal = frac2.d;
+
+                    return {
+                        lvl: 2,
+                        type: 'decreasing',
+                        frac1: frac1,
+                        frac2: frac2,
+                        boxPosition: boxPosition,
+                        correctVal: correctVal,
+                        maxDenom: 24
+                    };
+                }
+
+            } else if (lvl === 3) {
+                // LEVEL 3: THREE EQUIVALENT FRACTIONS IN A ROW (Denominators <= 48)
+                let valid = BASE_FRACTIONS.filter(f => f.d * 3 <= 48);
+                let base = valid[getRandomInt(0, valid.length - 1)];
+
+                let maxM = Math.floor(48 / base.d);
+                let possibleMults = [];
+                for (let m = 1; m <= maxM; m++) possibleMults.push(m);
+                
+                possibleMults.sort(() => Math.random() - 0.5);
+                let m1 = possibleMults[0];
+                let m2 = possibleMults[1];
+                let m3 = possibleMults[2];
+
+                let frac1 = { n: base.n * m1, d: base.d * m1 };
+                let frac2 = { n: base.n * m2, d: base.d * m2 };
+                let frac3 = { n: base.n * m3, d: base.d * m3 };
+
+                let box1Pos = Math.random() < 0.5 ? 'frac2_num' : 'frac2_den';
+                let box2Pos = Math.random() < 0.5 ? 'frac3_num' : 'frac3_den';
+
+                let correctVal1 = box1Pos === 'frac2_num' ? frac2.n : frac2.d;
+                let correctVal2 = box2Pos === 'frac3_num' ? frac3.n : frac3.d;
+
+                return {
+                    lvl: 3,
+                    frac1: frac1,
+                    frac2: frac2,
+                    frac3: frac3,
+                    box1Pos: box1Pos,
+                    box2Pos: box2Pos,
+                    correctVal1: correctVal1,
+                    correctVal2: correctVal2,
+                    maxDenom: 48
+                };
+            }
+        }
+
+        function startLevel(lvl) {
+            playSound('click');
+            currentLevel = lvl;
+            currentQuestionIdx = 0;
+            score = 0;
+            streak = 0;
+            updateStatsDisplay();
+
+            document.getElementById('level-select-screen').classList.add('hidden');
+            document.getElementById('gameplay-screen').classList.remove('hidden');
+            document.getElementById('gameplay-screen').classList.add('flex');
+
+            loadNextQuestion();
+        }
+
+        function showLevelSelect() {
+            playSound('click');
+            document.getElementById('victory-modal').classList.add('hidden');
+            document.getElementById('gameplay-screen').classList.add('hidden');
+            document.getElementById('level-select-screen').classList.remove('hidden');
+        }
+
+        function updateStatsDisplay() {
+            document.getElementById('score-display').textContent = score;
+            document.getElementById('streak-display').textContent = streak;
+        }
+
+        function loadNextQuestion() {
+            currentQuestionIdx++;
+            if (currentQuestionIdx > totalQuestions) {
+                showVictoryModal();
+                return;
+            }
+
+            attemptsForQuestion = 0;
+            isHintActive = false;
+            document.getElementById('current-q-num').textContent = currentQuestionIdx;
+            document.getElementById('feedback-msg').textContent = '';
+            document.getElementById('feedback-msg').className = 'text-sm font-bold min-h-[24px] flex items-center gap-2';
+
+            userBoxChoice1 = null;
+            userBoxChoice2 = null;
+            activeL3Box = 1;
+
+            const badge = document.getElementById('level-badge-container');
+            if (currentLevel === 1) {
+                badge.innerHTML = '🧪 Level 1: Increasing Denominators';
+            } else if (currentLevel === 2) {
+                badge.innerHTML = '🔮 Level 2: Mixed Scaling';
+            } else {
+                badge.innerHTML = '👑 Level 3: Triple Fraction Chain';
+            }
+
+            currentProblem = generateProblemForLevel(currentLevel);
+            renderCurrentView();
+        }
+
+        function renderCurrentView() {
+            const twoView = document.getElementById('two-fraction-view');
+            const threeView = document.getElementById('three-fraction-view');
+
+            if (currentLevel === 1 || currentLevel === 2) {
+                twoView.classList.remove('hidden');
+                twoView.classList.add('flex');
+                threeView.classList.add('hidden');
+                renderTwoFractionProblem();
+            } else {
+                twoView.classList.add('hidden');
+                threeView.classList.remove('hidden');
+                threeView.classList.add('flex');
+                renderThreeFractionProblem();
+            }
+        }
+
+        // Helper to format operation on fraction terms (e.g., "1 × 6" or "12 ÷ 4")
+        function formatOpTerm(baseVal, targetVal) {
+            if (targetVal > baseVal) {
+                let k = targetVal / baseVal;
+                return `${baseVal} <span class="text-yellow-300 font-black px-0.5">×</span> <span class="text-yellow-300 font-extrabold">${k}</span>`;
+            } else if (targetVal < baseVal) {
+                let k = baseVal / targetVal;
+                return `${baseVal} <span class="text-cyan-300 font-black px-0.5">÷</span> <span class="text-cyan-300 font-extrabold">${k}</span>`;
+            } else {
+                return `${baseVal}`;
+            }
+        }
+
+        function toggleVisualHint() {
+            showVisualHint = !showVisualHint;
+            const container = document.getElementById('visual-bar-hint-container');
+            const btn = document.getElementById('toggle-hint-btn');
+            if (showVisualHint) {
+                container.classList.remove('hidden');
+                btn.textContent = 'Hide Visual Bar';
+                if (currentProblem && (currentLevel === 1 || currentLevel === 2)) {
+                    renderVisualBars(currentProblem.frac1, currentProblem.frac2);
+                }
+            } else {
+                container.classList.add('hidden');
+                btn.textContent = 'Show Visual Bar';
+            }
+        }
+
+        function renderVisualBars(frac1, frac2) {
+            const container = document.getElementById('visual-bar-hint-container');
+            if (!container || container.classList.contains('hidden') || !showVisualHint) return;
+
+            const bar1 = document.getElementById('bar1-container');
+            const bar2 = document.getElementById('bar2-container');
+            if (!bar1 || !bar2) return;
+
+            // Build visual segments for frac1
+            bar1.innerHTML = '';
+            for (let i = 0; i < frac1.d; i++) {
+                const seg = document.createElement('div');
+                seg.className = `h-full flex-1 fraction-bar-segment ${i < frac1.n ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 'bg-purple-950/40'}`;
+                bar1.appendChild(seg);
+            }
+
+            // Build visual segments for frac2
+            bar2.innerHTML = '';
+            for (let i = 0; i < frac2.d; i++) {
+                const seg = document.createElement('div');
+                seg.className = `h-full flex-1 fraction-bar-segment ${i < frac2.n ? 'bg-gradient-to-r from-cyan-500 to-blue-500' : 'bg-purple-950/40'}`;
+                bar2.appendChild(seg);
+            }
+        }
+
+        function renderTwoFractionProblem() {
+            const p = currentProblem;
+            const mascotText = document.getElementById('mascot-instruction');
+
+            if (isHintActive) {
+                mascotText.innerHTML = `<span class="text-yellow-300 font-bold">💡 Working Hint:</span> Follow the operation on top and bottom to fill the square box!`;
+            } else {
+                if (p.lvl === 1) {
+                    mascotText.textContent = `Fill in the square box to complete the equivalent fraction with increasing denominator!`;
+                } else {
+                    if (p.type === 'increasing') {
+                        mascotText.textContent = `Multiply numerator and denominator to find the missing square box value!`;
+                    } else {
+                        mascotText.textContent = `Divide numerator and denominator to find the missing square box value!`;
+                    }
+                }
+            }
+
+            const f1Top = document.getElementById('l12-frac1-top');
+            const f1Bot = document.getElementById('l12-frac1-bot');
+            const f2Top = document.getElementById('l12-frac2-top');
+            const f2Bot = document.getElementById('l12-frac2-bot');
+
+            let f1TopContent, f1BotContent, f2TopContent, f2BotContent;
+
+            if (isHintActive) {
+                let pos = p.boxPosition;
+                if (pos === 'frac2_num' || pos === 'frac2_den') {
+                    // Fraction 1 has operation shown
+                    let baseNum = p.frac1.n;
+                    let baseDen = p.frac1.d;
+                    let targetNum = (pos === 'frac2_den') ? p.frac2.n : null;
+                    let targetDen = (pos === 'frac2_num') ? p.frac2.d : null;
+
+                    if (targetNum !== null) {
+                        f1TopContent = formatOpTerm(baseNum, targetNum);
+                        f1BotContent = formatOpTerm(baseDen, (targetNum > baseNum) ? baseDen * (targetNum / baseNum) : baseDen / (baseNum / targetNum));
+                    } else {
+                        f1TopContent = formatOpTerm(baseNum, (targetDen > baseDen) ? baseNum * (targetDen / baseDen) : baseNum / (baseDen / targetDen));
+                        f1BotContent = formatOpTerm(baseDen, targetDen);
+                    }
+                    f2TopContent = (pos === 'frac2_num') ? renderBoxHtml('box1', userBoxChoice1) : p.frac2.n;
+                    f2BotContent = (pos === 'frac2_den') ? renderBoxHtml('box1', userBoxChoice1) : p.frac2.d;
+                } else {
+                    // Fraction 2 has operation shown
+                    let baseNum = p.frac2.n;
+                    let baseDen = p.frac2.d;
+                    let targetNum = (pos === 'frac1_den') ? p.frac1.n : null;
+                    let targetDen = (pos === 'frac1_num') ? p.frac1.d : null;
+
+                    f1TopContent = (pos === 'frac1_num') ? renderBoxHtml('box1', userBoxChoice1) : p.frac1.n;
+                    f1BotContent = (pos === 'frac1_den') ? renderBoxHtml('box1', userBoxChoice1) : p.frac1.d;
+
+                    if (targetNum !== null) {
+                        f2TopContent = formatOpTerm(baseNum, targetNum);
+                        f2BotContent = formatOpTerm(baseDen, (targetNum > baseNum) ? baseDen * (targetNum / baseNum) : baseDen / (baseNum / targetNum));
+                    } else {
+                        f2TopContent = formatOpTerm(baseNum, (targetDen > baseDen) ? baseNum * (targetDen / baseDen) : baseNum / (baseDen / targetDen));
+                        f2BotContent = formatOpTerm(baseDen, targetDen);
+                    }
+                }
+            } else {
+                f1TopContent = p.boxPosition === 'frac1_num' ? renderBoxHtml('box1', userBoxChoice1) : p.frac1.n;
+                f1BotContent = p.boxPosition === 'frac1_den' ? renderBoxHtml('box1', userBoxChoice1) : p.frac1.d;
+                f2TopContent = p.boxPosition === 'frac2_num' ? renderBoxHtml('box1', userBoxChoice1) : p.frac2.n;
+                f2BotContent = p.boxPosition === 'frac2_den' ? renderBoxHtml('box1', userBoxChoice1) : p.frac2.d;
+            }
+
+            f1Top.innerHTML = f1TopContent;
+            f1Bot.innerHTML = f1BotContent;
+            f2Top.innerHTML = f2TopContent;
+            f2Bot.innerHTML = f2BotContent;
+
+            // Generate options
+            let options = generateOptionChoices(p.correctVal, p.maxDenom);
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+
+            options.forEach(val => {
+                const btn = document.createElement('button');
+                btn.className = `w-16 h-14 bg-purple-900/80 hover:bg-purple-700 text-cyan-200 border border-cyan-400/30 text-2xl font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center`;
+                if (userBoxChoice1 === val) {
+                    btn.classList.add('bg-yellow-500', 'text-slate-950', 'border-yellow-300', 'scale-105');
+                }
+                btn.textContent = val;
+                btn.onclick = () => selectL12Option(val);
+                grid.appendChild(btn);
+            });
+
+            // Render visual fraction bars
+            renderVisualBars(p.frac1, p.frac2);
+        }
+
+        function renderBoxHtml(boxId, val) {
+            const display = val !== null ? val : '';
+            const filledClass = val !== null ? 'filled' : '';
+            return `<div id="${boxId}" class="math-box ${filledClass}">${display}</div>`;
+        }
+
+        function selectL12Option(val) {
+            playSound('click');
+            userBoxChoice1 = val;
+            renderTwoFractionProblem();
+        }
+
+        function renderThreeFractionProblem() {
+            const p = currentProblem;
+            const mascotText = document.getElementById('mascot-instruction');
+
+            if (isHintActive) {
+                mascotText.innerHTML = `<span class="text-yellow-300 font-bold">💡 Working Hint:</span> Follow the operation on Fraction 1 to get the missing box value!`;
+            } else {
+                mascotText.textContent = `Fill in BOTH square boxes to complete the 3-fraction chain! Click Box 1 or Box 2 to select values.`;
+            }
+
+            const f1Top = document.getElementById('l3-frac1-top');
+            const f1Bot = document.getElementById('l3-frac1-bot');
+
+            if (isHintActive) {
+                let targetFrac = (activeL3Box === 1) ? p.frac2 : p.frac3;
+                let boxPos = (activeL3Box === 1) ? p.box1Pos : p.box2Pos;
+
+                let isNumLink = (boxPos === 'frac2_den' || boxPos === 'frac3_den');
+                let baseNum = p.frac1.n;
+                let baseDen = p.frac1.d;
+                let targetNum = targetFrac.n;
+                let targetDen = targetFrac.d;
+
+                if (isNumLink) {
+                    f1Top.innerHTML = formatOpTerm(baseNum, targetNum);
+                    f1Bot.innerHTML = formatOpTerm(baseDen, (targetNum > baseNum) ? baseDen * (targetNum / baseNum) : baseDen / (baseNum / targetNum));
+                } else {
+                    f1Top.innerHTML = formatOpTerm(baseNum, (targetDen > baseDen) ? baseNum * (targetDen / baseDen) : baseNum / (baseDen / targetDen));
+                    f1Bot.innerHTML = formatOpTerm(baseDen, targetDen);
+                }
+            } else {
+                f1Top.textContent = p.frac1.n;
+                f1Bot.textContent = p.frac1.d;
+            }
+
+            // Fraction 2 (1 missing box)
+            const f2Top = document.getElementById('l3-frac2-top');
+            const f2Bot = document.getElementById('l3-frac2-bot');
+            f2Top.innerHTML = p.box1Pos === 'frac2_num' ? renderBoxHtml('l3box1', userBoxChoice1) : p.frac2.n;
+            f2Bot.innerHTML = p.box1Pos === 'frac2_den' ? renderBoxHtml('l3box1', userBoxChoice1) : p.frac2.d;
+
+            // Fraction 3 (1 missing box)
+            const f3Top = document.getElementById('l3-frac3-top');
+            const f3Bot = document.getElementById('l3-frac3-bot');
+            f3Top.innerHTML = p.box2Pos === 'frac3_num' ? renderBoxHtml('l3box2', userBoxChoice2) : p.frac3.n;
+            f3Bot.innerHTML = p.box2Pos === 'frac3_den' ? renderBoxHtml('l3box2', userBoxChoice2) : p.frac3.d;
+
+            // Highlight active box
+            const l3box1El = document.getElementById('l3box1');
+            const l3box2El = document.getElementById('l3box2');
+
+            if (l3box1El) {
+                l3box1El.onclick = () => setActiveBox(1);
+                if (activeL3Box === 1) l3box1El.classList.add('active');
+            }
+            if (l3box2El) {
+                l3box2El.onclick = () => setActiveBox(2);
+                if (activeL3Box === 2) l3box2El.classList.add('active');
+            }
+
+            // Update box selection buttons
+            const btn1 = document.getElementById('select-box1-btn');
+            const btn2 = document.getElementById('select-box2-btn');
+            document.getElementById('box1-value-label').textContent = userBoxChoice1 !== null ? userBoxChoice1 : '?';
+            document.getElementById('box2-value-label').textContent = userBoxChoice2 !== null ? userBoxChoice2 : '?';
+
+            if (activeL3Box === 1) {
+                btn1.className = 'px-3 py-1.5 rounded-lg border font-bold transition-all bg-yellow-500 text-slate-950 border-yellow-300 scale-105';
+                btn2.className = 'px-3 py-1.5 rounded-lg border font-bold transition-all bg-purple-900/80 text-purple-200 border-white/20';
+                document.getElementById('l3-choice-prompt').textContent = 'Select a number for Box 1:';
+            } else {
+                btn2.className = 'px-3 py-1.5 rounded-lg border font-bold transition-all bg-yellow-500 text-slate-950 border-yellow-300 scale-105';
+                btn1.className = 'px-3 py-1.5 rounded-lg border font-bold transition-all bg-purple-900/80 text-purple-200 border-white/20';
+                document.getElementById('l3-choice-prompt').textContent = 'Select a number for Box 2:';
+            }
+
+            // Options grid
+            let targetCorrectVal = activeL3Box === 1 ? p.correctVal1 : p.correctVal2;
+            let options = generateOptionChoices(targetCorrectVal, p.maxDenom);
+            const grid = document.getElementById('l3-options-grid');
+            grid.innerHTML = '';
+
+            let currentChoice = activeL3Box === 1 ? userBoxChoice1 : userBoxChoice2;
+
+            options.forEach(val => {
+                const btn = document.createElement('button');
+                btn.className = `w-16 h-14 bg-purple-900/80 hover:bg-purple-700 text-pink-200 border border-pink-400/30 text-2xl font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center`;
+                if (currentChoice === val) {
+                    btn.classList.add('bg-yellow-500', 'text-slate-950', 'border-yellow-300', 'scale-105');
+                }
+                btn.textContent = val;
+                btn.onclick = () => selectL3Option(val);
+                grid.appendChild(btn);
+            });
+        }
+
+        function setActiveBox(boxNum) {
+            playSound('click');
+            activeL3Box = boxNum;
+            renderThreeFractionProblem();
+        }
+
+        function selectL3Option(val) {
+            playSound('click');
+            if (activeL3Box === 1) {
+                userBoxChoice1 = val;
+                if (userBoxChoice2 === null) activeL3Box = 2; // Auto advance to box 2 if empty
+            } else {
+                userBoxChoice2 = val;
+            }
+            renderThreeFractionProblem();
+        }
+
+        function generateOptionChoices(correctVal, maxCap) {
+            let options = new Set([correctVal]);
+            while (options.size < 4) {
+                let offset = getRandomInt(-4, 4);
+                let fake = correctVal + offset;
+                if (fake > 0 && fake <= maxCap && fake !== correctVal) {
+                    options.add(fake);
+                }
+            }
+            return Array.from(options).sort((a, b) => a - b);
+        }
+
+        function submitCurrentAnswer() {
+            const feedback = document.getElementById('feedback-msg');
+
+            if (currentLevel === 1 || currentLevel === 2) {
+                if (userBoxChoice1 === null) {
+                    feedback.className = 'text-sm font-bold text-yellow-300';
+                    feedback.innerHTML = '<i class="fas fa-exclamation-circle"></i> Pick a number for the square box first!';
+                    playSound('wrong');
+                    return;
+                }
+
+                if (userBoxChoice1 === currentProblem.correctVal) {
+                    handleCorrectAnswer(`Spot on! The missing number in the square box is ${currentProblem.correctVal}.`);
+                } else {
+                    attemptsForQuestion++;
+                    if (attemptsForQuestion === 1) {
+                        handleFirstWrongAttempt();
+                    } else {
+                        handleWrongAnswer(`Not quite! The correct answer for the square box is ${currentProblem.correctVal}.`);
+                    }
+                }
+
+            } else if (currentLevel === 3) {
+                if (userBoxChoice1 === null || userBoxChoice2 === null) {
+                    feedback.className = 'text-sm font-bold text-yellow-300';
+                    feedback.innerHTML = '<i class="fas fa-exclamation-circle"></i> Fill in BOTH Box 1 and Box 2 before checking!';
+                    playSound('wrong');
+                    return;
+                }
+
+                let correct1 = userBoxChoice1 === currentProblem.correctVal1;
+                let correct2 = userBoxChoice2 === currentProblem.correctVal2;
+
+                if (correct1 && correct2) {
+                    handleCorrectAnswer(`Brilliant wizardry! Box 1 = ${currentProblem.correctVal1} and Box 2 = ${currentProblem.correctVal2}! ✨`);
+                } else {
+                    attemptsForQuestion++;
+                    if (attemptsForQuestion === 1) {
+                        if (!correct1) activeL3Box = 1;
+                        else if (!correct2) activeL3Box = 2;
+                        handleFirstWrongAttempt();
+                    } else {
+                        handleWrongAnswer(`Check again! Box 1 should be ${currentProblem.correctVal1} and Box 2 should be ${currentProblem.correctVal2}.`);
+                    }
+                }
+            }
+        }
+
+        function handleFirstWrongAttempt() {
+            playSound('wrong');
+            streak = 0;
+            isHintActive = true;
+            updateStatsDisplay();
+
+            const feedback = document.getElementById('feedback-msg');
+            feedback.className = 'text-xs md:text-sm font-bold text-amber-200 bg-amber-950/90 p-3 rounded-xl border border-amber-400/50 w-full animate-pulse flex items-center gap-2';
+            feedback.innerHTML = `<i class="fas fa-lightbulb text-yellow-300 text-lg shrink-0"></i> <span>Check the working operation on the equation above to find the missing box value!</span>`;
+
+            renderCurrentView();
+        }
+
+        function handleCorrectAnswer(msg) {
+            playSound('correct');
+            score += 20 + streak * 5;
+            streak++;
+            isHintActive = false;
+            updateStatsDisplay();
+
+            const feedback = document.getElementById('feedback-msg');
+            feedback.className = 'text-sm font-bold text-emerald-400';
+            feedback.innerHTML = `<i class="fas fa-check-circle"></i> ${msg}`;
+
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 40,
+                    spread: 60,
+                    origin: { y: 0.7 }
+                });
+            }
+
+            setTimeout(() => {
+                loadNextQuestion();
+            }, 2000);
+        }
+
+        function handleWrongAnswer(msg) {
+            playSound('wrong');
+            streak = 0;
+            isHintActive = false;
+            updateStatsDisplay();
+
+            const feedback = document.getElementById('feedback-msg');
+            feedback.className = 'text-sm font-bold text-pink-400';
+            feedback.innerHTML = `<i class="fas fa-times-circle"></i> ${msg}`;
+
+            setTimeout(() => {
+                loadNextQuestion();
+            }, 2800);
+        }
+
+        function showVictoryModal() {
+            playSound('win');
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 100,
+                    spread: 100,
+                    origin: { y: 0.5 }
+                });
+            }
+
+            document.getElementById('modal-score').textContent = score;
+            let stars = '⭐⭐⭐';
+            if (score < 60) stars = '⭐';
+            else if (score < 90) stars = '⭐⭐';
+            document.getElementById('modal-stars').textContent = stars;
+
+            document.getElementById('victory-modal').classList.remove('hidden');
+        }
+
+        function nextLevelOrReplay() {
+            document.getElementById('victory-modal').classList.add('hidden');
+            if (currentLevel < 3) {
+                startLevel(currentLevel + 1);
+            } else {
+                showLevelSelect();
+            }
+        }
+
+        window.onload = function() {
+            initAudio();
+        };
+    </script>
+</body>
+</html>
